@@ -26,21 +26,18 @@ jobs:
 
       - name: Check Docker
         shell: powershell
-        run: |
-          docker version
+        run: docker version
 
       - name: Build Docker image
         shell: powershell
-        run: |
-          docker build -t my-cicd-web:latest .
+        run: docker build -t my-cicd-web:latest .
 
       - name: Replace Docker container
         shell: powershell
         run: |
-          $existingContainer = docker ps -a --format "{{.Names}}" |
-            Select-String -Pattern "^my-web$"
+          $existingContainer = docker ps -a --filter "name=^/my-web$" --format "{{.Names}}"
 
-          if ($existingContainer) {
+          if ($existingContainer -eq "my-web") {
             docker rm -f my-web
           }
 
@@ -50,10 +47,7 @@ jobs:
         shell: powershell
         run: |
           Start-Sleep -Seconds 3
-
-          $response = Invoke-WebRequest 
-            -Uri "http://localhost:8080" 
-            -UseBasicParsing
+          $response = Invoke-WebRequest -Uri "http://localhost:8080" -UseBasicParsing
 
           if ($response.StatusCode -ne 200) {
             throw "Website test failed: HTTP $($response.StatusCode)"
