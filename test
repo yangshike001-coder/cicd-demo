@@ -1,0 +1,216 @@
+
+能区分
+
+機能名
+
+導入スコープ
+
+選定理由・確認目的
+
+Core Observability
+
+Application Performance Monitoring（APM）
+
+● 対象
+
+アプリケーションの処理時間、エラーおよびサービス間依存関係を確認する。
+
+Core Observability
+
+Log Management
+
+● 対象
+
+障害発生時に、アプリケーションおよびコンテナのログを検索・分析し、原因を調査する。
+
+Process & Network
+
+Live Process Monitoring
+
+● 対象
+
+Worker Nodeおよびコンテナ上で稼働するプロセスと、CPU・メモリ使用状況を確認する。
+
+Process & Network
+
+Network Monitoring
+
+× 対象外
+
+本ハンズオンにおける導入・動作確認の対象外とする※ Dashboardは、上記3機能で取得した監視情報を横断的に確認するための共通可視化画面とする。
+※ ログの種類、トレースの確認項目、各画面および設定値の詳細は、
+　後続の「Datadog機能詳細」および「設定値・画面確認」で定義する。
+
+
+
+
+
+
+
+
+11111111
+你记得对。川、藤的意思是：第 7 页现在只是“数据怎么流”的图；设计书还要补“各功能到底收集什么、在哪个 Datadog 画面看、能确认什么、实际设定值是什么”。
+
+先纠正一个关键点：你这份设计书的导入对象始终是 3 个，不是 5 个：
+
+1. APM
+2. Log Management
+3. Live Process Monitoring
+
+Dashboard 不是第 4 个导入功能，而是这三个功能的共通查看入口／可视化画面。Network Monitoring 仍然是対象外。
+
+⸻
+
+你现有三页分别怎么改
+
+第 2 页：前提・选择功能
+
+这页基本不用大改。保留三项功能和 Network Monitoring「対象外」。
+
+但建议把表头的「主な機能概要」保持简洁，不要在这页塞过多细节。它的作用只是回答：
+
+为什么选这三个功能、范围是什么。
+
+⸻
+
+第 3 页：实施环境构成图
+
+这页也以小改为主，但建议把 Datadog 两个部件的职责写清楚：
+
+* Datadog Agent
+    * OSD Worker Node 上运行
+    * 收集 Application Pod 的 Trace、Log、Process 信息并发送到 Datadog SaaS
+* Datadog SaaS
+    * 接收、保存、分析、可视化监控数据
+    * 通过 Dashboard、APM、Logs Explorer、Live Process Monitoring 等画面供用户确认
+
+如果图里能再补一小行更好：
+
+Datadog Agentは、Worker Node上で稼働し、アプリケーションPodから取得した監視データをDatadog SaaSへ送信する。
+
+⸻
+
+第 7 页：要大改
+
+你现在这页标题是：
+
+可視化・監視処理のシナリオ
+
+川、藤认为它实际讲的是数据流，因此建议改成：
+
+Datadog監視データフロー
+または
+Datadog監視処理のデータフロー
+
+图的布局也要重画
+
+要和第 3 页的整体构成图一致：
+
+* 左边：GCP／アプリケーション実行基盤／OSD Cluster
+* 右边：Datadog SaaS
+* Cloud Storage：放在 GCP 一侧
+* Okta：作为用户访问 Datadog 的认证入口
+
+图中 Datadog SaaS 内建议明确画出：
+
+Datadog SaaS
+ ├─ Dashboard
+ ├─ APM（Service Map／Trace）
+ ├─ Log Explorer
+ └─ Live Process Monitoring
+
+这样读者才知道：收集到 SaaS 后，不是“数据消失了”，而是在哪个画面查看。
+
+你第 7 页编号要一一对应
+
+现在右侧文字有 ①～⑨，但图上没有清晰体现 ④、⑥、⑨。改成下面这个对应关系：
+
+编号	图上的动作／组件	右侧说明应写什么
+①	Application Pod → Datadog Agent	APM 用的 Trace 信息由应用 Pod 发送给 Agent
+②	Datadog Agent → Datadog SaaS	Agent 将 APM Trace 发送到 Datadog SaaS
+③	Okta → Datadog SaaS	用户通过 Okta SSO 认证登录 Datadog
+④	Datadog SaaS 内的 APM 画面	通过 APM Service Map／Trace 确认服务关系、延迟和错误
+⑤	Datadog Agent → Datadog SaaS	Agent 收集并发送容器／应用日志
+⑥	Datadog SaaS 内的 Log Explorer	使用 Log Explorer 搜索、过滤和分析日志
+⑦	Datadog SaaS → Cloud Storage	长期保存对象日志归档至 Cloud Storage
+⑧	Datadog Agent → Datadog SaaS	Agent 收集并发送 Node／Container 的进程信息
+⑨	Datadog SaaS 内的 Live Process Monitoring	在画面中确认进程、CPU、内存等实时状态
+
+注意：第 7 页现在写的是：
+
+[Process & Network（プロセス監視）]
+
+这会和第 2 页“Network Monitoring 是対象外”矛盾。请改成：
+
+[Live Process Monitoring（プロセス監視）]
+
+⸻
+
+新增第 8 页：功能详细说明
+
+这是川、藤最想让你补的页。标题可以直接用：
+
+Datadog機能詳細（収集対象・確認内容・利用画面）
+
+不要只写“ログ”“トレース情報”，要像下面这样逐项写。
+
+機能	収集対象	確認内容	利用画面
+APM	リクエスト単位のトレース、サービス名、処理時間、エラー情報、サービス間依存関係	処理遅延箇所、エラー発生箇所、サービス間の呼び出し関係を確認する	APM（Service Map／Trace画面）
+Log Management	対象コンテナ／アプリケーションから出力されるログ、日時、ログレベル、メッセージ、Pod名、namespace等の属性	エラー内容、障害発生時刻、対象Pod／namespaceおよび原因を調査する	Log Explorer
+Live Process Monitoring	Worker Nodeおよびコンテナ上で稼働するプロセス名、PID、CPU使用率、メモリ使用量等	高負荷プロセス、不審なプロセス、稼働状況をリアルタイムに確認する	Live Process Monitoring
+Dashboard（共通）	APM、ログ、プロセスなどの監視情報	運用者が監視状況を横断的・迅速に把握する	Dashboard
+
+这里的重点是：Log 要单独细化。
+
+你可以在 Log Management 下再加一块：
+
+ログ種別・確認項目
+・アプリケーションログ
+・エラーログ
+・コンテナログ
+・ログレベル、発生日時、メッセージ、Pod名、namespace
+
+但“アクセスログ”等内容，只有在你实际应用确实输出、且 Datadog 已收集时才写进去；不能为了丰富资料凭空增加。
+
+⸻
+
+新增第 9 页：设置值与 UI 画面说明
+
+标题建议：
+
+Datadog設定値および画面確認
+
+这一页放实际 UI 截图，并在每张截图下写一句“这个图证明了什么”。不要只是把截图贴上去。
+
+截图	截图下可写的说明
+Datadog 功能选择／设置画面	APM、Log ManagementおよびLive Process Monitoringを有効化し、監視対象環境としてenv:ongcpを設定する。
+APM 画面	対象アプリケーションのトレース情報、処理時間およびエラー有無を確認する。
+Log Explorer 画面	env:ongcp、namespace、Pod名等を条件として対象ログを検索・分析する。
+Live Process Monitoring 画面	Worker Nodeおよびコンテナで稼働するプロセスとCPU／メモリ使用状況を確認する。
+Dashboard 画面	APM、ログおよびプロセス監視情報を横断的に確認する。
+
+API Key、Secret 等敏感信息不要截图；即使截图，也必须全部遮蔽。
+
+另外，第 7 页的「Cloud Storage へ自動アーカイブ保存」只有在你已经实际设置并验证过时，才能写成确定语气。若目前只是计划，应改成：
+
+長期保管が必要なログについては、Cloud Storageへのアーカイブ方式を別途検討する。
+
+不要把“未来可能做”写成“已经自动保存”。
+
+⸻
+
+最终 PPT 页结构建议
+
+页码	页面作用
+第 2 页	选了哪三个功能、哪些不在范围内
+第 3 页	Datadog Agent、Datadog SaaS 在整体 GCP 架构中的位置
+第 7 页（重做）	Datadog 监控数据流与操作流程
+第 8 页（新增）	三项功能的详细设计：收集什么、看什么、在哪里看
+第 9 页（新增）	实际 Datadog 设置值与 UI 截图说明
+
+最重要的改法就是：
+
+第 7 页保留“流向”；第 8 页解释“数据内容和功能”；第 9 页用真实 UI 证明“实际设定和可看到的结果”。
+
+
+
